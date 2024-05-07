@@ -4,9 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { RouterModule } from '@angular/router';
 
+import { ClipboardModule } from 'ngx-clipboard';
+import { CommonModule } from '@angular/common';
+
 import { AppComponent } from './app.component';
-import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout.component';
-import { AuthLayoutComponent } from './layouts/auth-layout/auth-layout.component';
 
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
@@ -21,10 +22,11 @@ import { ComponentsModule } from './components/components.module';
     ComponentsModule,
     NgbModule,
     RouterModule,
-    AppRoutingModule
+    AppRoutingModule,
+    CommonModule,
+    ClipboardModule
   ],
-  declarations: [AppComponent, AdminLayoutComponent, AuthLayoutComponent],
-  providers: [],
+  declarations: [AppComponent],
   bootstrap: [AppComponent]
 })
 export class AppModule {}
