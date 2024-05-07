@@ -1,7 +1,6 @@
-import { Component, OnInit, ElementRef } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ROUTES } from '../sidebar/sidebar.component';
-import { Location, LocationStrategy, PathLocationStrategy } from '@angular/common';
-import { Router } from '@angular/router';
+import { Location } from '@angular/common';
 
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -12,32 +11,34 @@ import { Observable } from 'rxjs';
   styleUrls: ['./navbar.component.scss']
 })
 export class NavbarComponent implements OnInit {
-  public focus;
   public listTitles: any[];
   public location: Location;
 
-  public userData: any;
+  public athleteData: any;
+  public athleteStats: any;
+  public athleteActivities: any;
 
   private apiUrl = 'https://www.strava.com/api/v3';
   private clientId = '125421';
   private redirectUri = window.location.origin;
   private clientSecret = '349613ffbf4a36801a739a6bd1beea68cea4f09c';
 
-  constructor(private http: HttpClient, private router: Router, location: Location) {
+  constructor(private http: HttpClient, location: Location) {
     this.location = location;
-    const code = new URL(window.location.href).searchParams.get('code');
-    if (code) {
-      this.getAccessToken(code).subscribe((data: any) => {
-        localStorage.setItem('stravaToken', data.access_token);
-        // this.router.navigate(['/']);
-        this.getStravaData();
-      });
-    }
   }
 
   ngOnInit() {
     this.listTitles = ROUTES.filter((listTitle) => listTitle);
+
+    const code = new URL(window.location.href).searchParams.get('code');
+    if (code) {
+      this.getAccessToken(code).subscribe((data: any) => {
+        localStorage.setItem('stravaToken', data.access_token);
+        this.getAthleteData();
+      });
+    }
   }
+
   getTitle() {
     var title = this.location.prepareExternalUrl(this.location.path());
     if (title.charAt(0) === '#') {
@@ -56,7 +57,23 @@ export class NavbarComponent implements OnInit {
     window.location.href = `http://www.strava.com/oauth/authorize?client_id=${this.clientId}&response_type=code&redirect_uri=${this.redirectUri}&approval_prompt=force&scope=read,activity:read`;
   }
 
-  getAccessToken(code: string): Observable<any> {
+  logoutFromStrava(): void {
+    const token = localStorage.getItem('stravaToken');
+    const headers = { Authorization: 'Bearer ' + token };
+    this.http.post('https://www.strava.com/oauth/deauthorize', {}, { headers }).subscribe(
+      () => {
+        localStorage.removeItem('stravaToken');
+        this.athleteData = null;
+        this.athleteStats = null;
+        this.athleteActivities = null;
+      },
+      (error) => {
+        console.error('Error:', error);
+      }
+    );
+  }
+
+  private getAccessToken(code: string): Observable<any> {
     const body = {
       client_id: this.clientId,
       client_secret: this.clientSecret,
@@ -66,26 +83,14 @@ export class NavbarComponent implements OnInit {
     return this.http.post('https://www.strava.com/oauth/token', body);
   }
 
-  getStravaData(): void {
+  private getAthleteData(): void {
     const token = localStorage.getItem('stravaToken');
     const headers = { Authorization: 'Bearer ' + token };
-    this.http.get(this.apiUrl + '/athlete', { headers }).subscribe((data) => {
-      console.log(data);
-      this.userData = data;
-      this.getAthleteData();
-    });
-  }
-
-  logoutFromStrava(): void {
-    const token = localStorage.getItem('stravaToken');
-    const headers = { Authorization: 'Bearer ' + token };
-    this.http.post('https://www.strava.com/oauth/deauthorize', {}, { headers }).subscribe(
+    this.http.get(this.apiUrl + '/athlete', { headers }).subscribe(
       (data) => {
-        console.log(data);
-        // Remove the token from local storage
-        localStorage.removeItem('stravaToken');
-        // Update the user's login status and other necessary actions
-        this.userData = null;
+        this.athleteData = data;
+        this.getAthleteStats();
+        this.getAthleteActivities();
       },
       (error) => {
         console.error('Error:', error);
@@ -93,105 +98,27 @@ export class NavbarComponent implements OnInit {
     );
   }
 
-  getAthleteData(): void {
+  private getAthleteStats(): void {
     const token = localStorage.getItem('stravaToken');
     const headers = { Authorization: 'Bearer ' + token };
-    // this.http.get('https://www.strava.com/api/v3/athlete', { headers }).subscribe(
-    //   (data) => {
-    //     console.log(data);
-    //     // Handle the data here
-    //   },
-    //   (error) => {
-    //     console.error('Error:', error);
-    //   }
-    // );
-
-    // this.http.get('https://www.strava.com/api/v3/athletes/38174313/stats', { headers }).subscribe(
-    //   (data) => {
-    //     console.log(data);
-    //     // Handle the data here
-    //   },
-    //   (error) => {
-    //     console.error('Error:', error);
-    //   }
-    // );
-
     this.http
-      .get(`https://www.strava.com/api/v3/athletes/${this.userData.id}/stats`, { headers })
+      .get(`https://www.strava.com/api/v3/athletes/${this.athleteData.id}/stats`, { headers })
       .subscribe(
         (data) => {
-          console.log(data);
-          // Handle the data here
+          this.athleteStats = data;
         },
         (error) => {
           console.error('Error:', error);
         }
       );
+  }
 
-    this.http.get(`https://www.strava.com/api/v3/athlete/zones&scope=read_all,activity:read_all`, { headers }).subscribe(
-      (data) => {
-        console.log(data);
-        // Handle the data here
-      },
-      (error) => {
-        console.error('Error:', error);
-      }
-    );
-
-    this.http.get(`https://www.strava.com/api/v3/segments/starred`, { headers }).subscribe(
-      (data) => {
-        console.log(data);
-        // Handle the data here
-      },
-      (error) => {
-        console.error('Error:', error);
-      }
-    );
-
-    this.http.get(`https://www.strava.com/api/v3/segments/explore`, { headers }).subscribe(
-      (data) => {
-        console.log(data);
-        // Handle the data here
-      },
-      (error) => {
-        console.error('Error:', error);
-      }
-    );
-
-    this.http.get(`https://www.strava.com/api/v3/segment_efforts`, { headers }).subscribe(
-      (data) => {
-        console.log(data);
-        // Handle the data here
-      },
-      (error) => {
-        console.error('Error:', error);
-      }
-    );
-
+  private getAthleteActivities(): void {
+    const token = localStorage.getItem('stravaToken');
+    const headers = { Authorization: 'Bearer ' + token };
     this.http.get(`https://www.strava.com/api/v3/activities`, { headers }).subscribe(
       (data) => {
-        console.log(data);
-        // Handle the data here
-      },
-      (error) => {
-        console.error('Error:', error);
-      }
-    );
-
-    this.http.get(`https://www.strava.com/api/v3/athlete/activities`, { headers }).subscribe(
-      (data) => {
-        console.log(data);
-        // Handle the data here
-      },
-      (error) => {
-        console.error('Error:', error);
-      }
-    );
-
-    this.http.get(`https://www.strava.com/api/v3/athlete/clubs`, { headers }).subscribe(
-      (data) => {
-        console.log(data);
-        // Handle the data here
+        this.athleteActivities = data;
       },
       (error) => {
         console.error('Error:', error);

@@ -7,24 +7,33 @@
       >{{getTitle()}}</a
     >
 
+    Data:
+    <pre>{{athleteData | json }}</pre>
+    Stats:
+    <pre>{{athleteStats | json }}</pre>
+    Activities:
+    <pre>{{athleteActivities | json }}</pre>
+
     <ul class="navbar-nav align-items-center d-none d-md-flex">
-      <li *ngIf="!userData?.profile" class="nav-item" placement="bottom-right">
+      <li *ngIf="!athleteData?.profile" class="nav-item" placement="bottom-right">
         <a href="javascript:void(0)" class="btn btn-neutral btn-icon" (click)="loginWithStrava()">
-          <span class="btn-inner--icon"><img src="../assets/img/icons/common/strava-login.svg" /></span>
+          <span class="btn-inner--icon"
+            ><img src="../assets/img/icons/common/strava-login.svg"
+          /></span>
           <span class="btn-inner--text">Login</span>
         </a>
       </li>
-      <li *ngIf="userData?.profile" class="nav-item" ngbDropdown placement="bottom-right">
+      <li *ngIf="athleteData?.profile" class="nav-item" ngbDropdown placement="bottom-right">
         <a class="nav-link pr-0" role="button" ngbDropdownToggle>
           <div class="media align-items-center">
             <span class="avatar avatar-sm rounded-circle">
               <img
                 alt="Image placeholder"
-                [src]="userData?.profile ? userData.profile : 'assets/img/theme/login.jpg'" />
+                [src]="athleteData?.profile ? athleteData.profile : 'assets/img/theme/login.jpg'" />
             </span>
             <div class="media-body ml-2 d-none d-lg-block">
               <span class="mb-0 text-sm font-weight-bold"
-                >{{userData.firstname}} {{userData.lastname}}</span
+                >{{athleteData.firstname}} {{athleteData.lastname}}</span
               >
             </div>
           </div>
