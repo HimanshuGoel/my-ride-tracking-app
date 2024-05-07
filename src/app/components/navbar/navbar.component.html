@@ -15,7 +15,7 @@
     <pre>{{athleteActivities | json }}</pre> -->
 
     <ul class="navbar-nav align-items-center d-none d-md-flex">
-      <li *ngIf="!athleteData?.profile" class="nav-item" placement="bottom-right">
+      <li *ngIf="!athlete.details?.profile" class="nav-item" placement="bottom-right">
         <a href="javascript:void(0)" class="btn btn-neutral btn-icon" (click)="loginWithStrava()">
           <span class="btn-inner--icon"
             ><img src="../assets/img/icons/common/strava-login.svg"
@@ -23,17 +23,17 @@
           <span class="btn-inner--text">Login</span>
         </a>
       </li>
-      <li *ngIf="athleteData?.profile" class="nav-item" ngbDropdown placement="bottom-right">
+      <li *ngIf="athlete.details?.profile" class="nav-item" ngbDropdown placement="bottom-right">
         <a class="nav-link pr-0" role="button" ngbDropdownToggle>
           <div class="media align-items-center">
             <span class="avatar avatar-sm rounded-circle">
               <img
                 alt="Image placeholder"
-                [src]="athleteData?.profile ? athleteData.profile : 'assets/img/theme/login.jpg'" />
+                [src]="athlete.details?.profile ? athlete.details.profile : 'assets/img/theme/login.jpg'" />
             </span>
             <div class="media-body ml-2 d-none d-lg-block">
               <span class="mb-0 text-sm font-weight-bold"
-                >{{athleteData.firstname}} {{athleteData.lastname}}</span
+                >{{athlete.details?.firstname}} {{athlete.details?.lastname}}</span
               >
             </div>
           </div>
@@ -47,7 +47,7 @@
             <span>My profile</span>
           </a>
           <div class="dropdown-divider"></div>
-          <a href="#!" class="dropdown-item" (click)="logoutFromStrava()">
+          <a class="dropdown-item" (click)="logoutFromStrava()">
             <i class="ni ni-user-run"></i>
             <span>Logout</span>
           </a>

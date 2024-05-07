@@ -4,6 +4,8 @@ import { Location } from '@angular/common';
 
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { Router } from '@angular/router';
+import { DataSharedDataService } from '../../services/data-share.service';
 
 @Component({
   selector: 'app-navbar',
@@ -14,16 +16,20 @@ export class NavbarComponent implements OnInit {
   public listTitles: any[];
   public location: Location;
 
-  public athleteData: any;
-  public athleteStats: any;
-  public athleteActivities: any;
+  public athlete = {} as any;
+  public athletes = [] as any[];
 
   private apiUrl = 'https://www.strava.com/api/v3';
   private clientId = '125421';
   private redirectUri = window.location.origin;
   private clientSecret = '349613ffbf4a36801a739a6bd1beea68cea4f09c';
 
-  constructor(private http: HttpClient, location: Location) {
+  constructor(
+    private http: HttpClient,
+    location: Location,
+    private router: Router,
+    private dataSharedDataService: DataSharedDataService
+  ) {
     this.location = location;
   }
 
@@ -41,10 +47,6 @@ export class NavbarComponent implements OnInit {
 
   getTitle() {
     var title = this.location.prepareExternalUrl(this.location.path());
-    if (title.charAt(0) === '#') {
-      title = title.slice(1);
-    }
-
     for (var item = 0; item < this.listTitles.length; item++) {
       if (this.listTitles[item].path === title) {
         return this.listTitles[item].title;
@@ -63,9 +65,9 @@ export class NavbarComponent implements OnInit {
     this.http.post('https://www.strava.com/oauth/deauthorize', {}, { headers }).subscribe(
       () => {
         localStorage.removeItem('stravaToken');
-        this.athleteData = null;
-        this.athleteStats = null;
-        this.athleteActivities = null;
+        this.athlete = {};
+        this.dataSharedDataService.setData([]);
+        this.router.navigateByUrl('/dashboard');
       },
       (error) => {
         console.error('Error:', error);
@@ -88,7 +90,7 @@ export class NavbarComponent implements OnInit {
     const headers = { Authorization: 'Bearer ' + token };
     this.http.get(this.apiUrl + '/athlete', { headers }).subscribe(
       (data) => {
-        this.athleteData = data;
+        this.athlete.details = data;
         this.getAthleteStats();
         this.getAthleteActivities();
       },
@@ -102,10 +104,10 @@ export class NavbarComponent implements OnInit {
     const token = localStorage.getItem('stravaToken');
     const headers = { Authorization: 'Bearer ' + token };
     this.http
-      .get(`https://www.strava.com/api/v3/athletes/${this.athleteData.id}/stats`, { headers })
+      .get(`https://www.strava.com/api/v3/athletes/${this.athlete.details.id}/stats`, { headers })
       .subscribe(
         (data) => {
-          this.athleteStats = data;
+          this.athlete.stats = data;
         },
         (error) => {
           console.error('Error:', error);
@@ -118,7 +120,9 @@ export class NavbarComponent implements OnInit {
     const headers = { Authorization: 'Bearer ' + token };
     this.http.get(`https://www.strava.com/api/v3/activities`, { headers }).subscribe(
       (data) => {
-        this.athleteActivities = data;
+        this.athlete.activities = data;
+        this.athletes.push(this.athlete);
+        this.dataSharedDataService.setData(this.athletes);
       },
       (error) => {
         console.error('Error:', error);

@@ -13,6 +13,7 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 import { AppRoutingModule } from './app.routing';
 import { ComponentsModule } from './components/components.module';
+import { DashboardComponent } from './pages/dashboard/dashboard.component';
 
 @NgModule({
   imports: [
@@ -26,7 +27,7 @@ import { ComponentsModule } from './components/components.module';
     CommonModule,
     ClipboardModule
   ],
-  declarations: [AppComponent],
+  declarations: [AppComponent, DashboardComponent],
   bootstrap: [AppComponent]
 })
 export class AppModule {}
