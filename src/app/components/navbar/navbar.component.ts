@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Router } from '@angular/router';
 import { DataSharedDataService } from '../../services/data-share.service';
+import { NetworkService } from '../../services/network.service';
 
 @Component({
   selector: 'app-navbar',
@@ -19,16 +20,20 @@ export class NavbarComponent implements OnInit {
   public athlete = {} as any;
   public athletes = [] as any[];
 
+  // private token = '';
+  private tokens = [];
+
   private apiUrl = 'https://www.strava.com/api/v3';
   private clientId = '125421';
   private redirectUri = window.location.origin;
   private clientSecret = '349613ffbf4a36801a739a6bd1beea68cea4f09c';
 
   constructor(
-    private http: HttpClient,
     location: Location,
+    private http: HttpClient,
     private router: Router,
-    private dataSharedDataService: DataSharedDataService
+    private dataSharedDataService: DataSharedDataService,
+    private networkService: NetworkService
   ) {
     this.location = location;
   }
@@ -39,8 +44,68 @@ export class NavbarComponent implements OnInit {
     const code = new URL(window.location.href).searchParams.get('code');
     if (code) {
       this.getAccessToken(code).subscribe((data: any) => {
-        localStorage.setItem('stravaToken', data.access_token);
-        this.getAthleteData();
+        this.networkService.addToken(data.access_token).subscribe(
+          (data) => {
+            // this.router.navigate([], { replaceUrl: true });
+            this.router.navigate(['']).then(() => {
+              window.location.reload();
+            });
+            // this.networkService.getTokens().subscribe((data) => {
+            //   this.tokens = data;
+            //   // this.token = data[0];
+
+            //   if (this.tokens.length > 0) {
+            //     for (let i = 0; i < this.tokens.length; i++) {
+            //       // this.token = this.tokens[i];
+            //       this.getAthleteData(this.tokens[i]);
+            //     }
+            //     // this.getAthleteData();
+            //   }
+            //   //   else {
+            //   //     const code = new URL(window.location.href).searchParams.get('code');
+            //   //     if (code) {
+            //   //       this.getAccessToken(code).subscribe((data: any) => {
+            //   //         this.networkService.addToken(data.access_token).subscribe();
+            //   //         this.tokens.push(data.access_token);
+            //   //         this.getAthleteData(data.access_token);
+            //   //       });
+            //   //     }
+            //   //   }
+            // });
+          },
+          (error) => {
+            console.error('Error:', error);
+          }
+        );
+        // this.tokens.push(data.access_token);
+        // for (let i = 0; i < this.tokens.length; i++) {
+        //   this.getAthleteData(this.tokens[i]);
+        // }
+        // this.getAthleteData(data.access_token);
+        // this.router.navigateByUrl('/dashboard');
+      });
+    } else {
+      this.networkService.getTokens().subscribe((data) => {
+        this.tokens = data;
+        // this.token = data[0];
+
+        if (this.tokens.length > 0) {
+          for (let i = 0; i < this.tokens.length; i++) {
+            // this.token = this.tokens[i];
+            this.getAthleteData(this.tokens[i]);
+          }
+          // this.getAthleteData();
+        }
+        //   else {
+        //     const code = new URL(window.location.href).searchParams.get('code');
+        //     if (code) {
+        //       this.getAccessToken(code).subscribe((data: any) => {
+        //         this.networkService.addToken(data.access_token).subscribe();
+        //         this.tokens.push(data.access_token);
+        //         this.getAthleteData(data.access_token);
+        //       });
+        //     }
+        //   }
       });
     }
   }
@@ -60,19 +125,18 @@ export class NavbarComponent implements OnInit {
   }
 
   logoutFromStrava(): void {
-    const token = localStorage.getItem('stravaToken');
-    const headers = { Authorization: 'Bearer ' + token };
-    this.http.post('https://www.strava.com/oauth/deauthorize', {}, { headers }).subscribe(
-      () => {
-        localStorage.removeItem('stravaToken');
-        this.athlete = {};
-        this.dataSharedDataService.setData([]);
-        this.router.navigateByUrl('/dashboard');
-      },
-      (error) => {
-        console.error('Error:', error);
-      }
-    );
+    // const headers = { Authorization: 'Bearer ' + token };
+    // this.http.post('https://www.strava.com/oauth/deauthorize', {}, { headers }).subscribe(
+    //   () => {
+    //     this.networkService.removeToken(token).subscribe();
+    //     this.athlete = {};
+    //     this.dataSharedDataService.setData([]);
+    //     this.router.navigateByUrl('/dashboard');
+    //   },
+    //   (error) => {
+    //     console.error('Error:', error);
+    //   }
+    // );
   }
 
   private getAccessToken(code: string): Observable<any> {
@@ -85,14 +149,13 @@ export class NavbarComponent implements OnInit {
     return this.http.post('https://www.strava.com/oauth/token', body);
   }
 
-  private getAthleteData(): void {
-    const token = localStorage.getItem('stravaToken');
+  private getAthleteData(token: string): void {
     const headers = { Authorization: 'Bearer ' + token };
     this.http.get(this.apiUrl + '/athlete', { headers }).subscribe(
       (data) => {
         this.athlete.details = data;
-        this.getAthleteStats();
-        this.getAthleteActivities();
+        this.getAthleteStats(token);
+        this.getAthleteActivities(token);
       },
       (error) => {
         console.error('Error:', error);
@@ -100,8 +163,7 @@ export class NavbarComponent implements OnInit {
     );
   }
 
-  private getAthleteStats(): void {
-    const token = localStorage.getItem('stravaToken');
+  private getAthleteStats(token: string): void {
     const headers = { Authorization: 'Bearer ' + token };
     this.http
       .get(`https://www.strava.com/api/v3/athletes/${this.athlete.details.id}/stats`, { headers })
@@ -115,8 +177,7 @@ export class NavbarComponent implements OnInit {
       );
   }
 
-  private getAthleteActivities(): void {
-    const token = localStorage.getItem('stravaToken');
+  private getAthleteActivities(token: string): void {
     const headers = { Authorization: 'Bearer ' + token };
     this.http.get(`https://www.strava.com/api/v3/activities`, { headers }).subscribe(
       (data) => {
